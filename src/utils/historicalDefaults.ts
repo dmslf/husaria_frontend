@@ -219,9 +219,10 @@ export function computeHistoricalAverages(scenario: Scenario, histYears: string[
   out.payablesPct = clamp01(payablesPct);
 
   // provide day-based defaults
-  out.receivablesDays = clampDays(meanReceivablesDays ?? defaultReceivablesDays);
-  out.inventoryDays = clampDays(meanInventoryDays ?? defaultInventoryDays);
-  out.payablesDays = clampDays(meanPayablesDays ?? defaultPayablesDays);
+  out.receivablesDays = Math.round(clampDays(meanReceivablesDays ?? defaultReceivablesDays));
+  out.inventoryDays = Math.round(clampDays(meanInventoryDays ?? defaultInventoryDays));
+  out.payablesDays = Math.round(clampDays(meanPayablesDays ?? defaultPayablesDays));
+
 
   out.netDebtPct = DEFAULT_MODEL_PARAMS.netDebtPct; // we leave netDebtPct fallback untouched
   out.balanceGrowthPct = DEFAULT_MODEL_PARAMS.balanceGrowthPct;

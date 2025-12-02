@@ -106,15 +106,17 @@ export function calculateDcfFcff(scenario: Scenario, params: DcfParams) {
   const lastInputs = (scenario[lastForecastYear]?.inputs ?? {}) as Record<string, any>;
   const terminalNetDebt = n(lastInputs.net_debt ?? lastInputs.debt ?? 0);
 
-  const equityValue = enterpriseValue - terminalNetDebt;
+  const rawEquity = enterpriseValue - terminalNetDebt;
+  const equityValue = Math.max(rawEquity, 0);
 
   return {
     pvCashflows,
     terminalValue,
     pvTerminal,
     enterpriseValue,
-    equityValue,
     terminalNetDebt,
+    rawEquity,          // surowa (może być ujemna)
+    equityValue,        // sklonowana >= 0 (używane dalej)
     cashflows,
   };
 }

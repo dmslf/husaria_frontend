@@ -257,7 +257,7 @@ export const LINE_DEFS: LineDef[] = [
 
   {
     id: "operating_cf",
-    label: "Operating CF",
+    label: "Operacyjny Cash Flow",
     source: "outputs",
     kind: "calculated",
     category: "CF",

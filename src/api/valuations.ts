@@ -20,18 +20,23 @@ export interface CompanyStatementsResponse {
 
 // Jeśli jest tryb deva Vite — użyj względnych ścieżek żeby proxy zadziałało.
 // W produkcji (build) użyj VITE_API_BASE_URL (wartości ustawionej podczas builda).
+// frontend/src/api/valuations.ts
+
 const IS_DEV = import.meta.env.DEV === true;
-const BASE = IS_DEV ? '' : (import.meta.env.VITE_API_BASE_URL ?? ''); // w prod np. "http://.../valuations"
+const RAW_BASE = IS_DEV ? '' : (import.meta.env.VITE_API_BASE_URL ?? '');
+// ujednolicenie: usuń końcowe slashe
+const NORMALIZED_BASE = RAW_BASE.replace(/\/+$/, '');
+// jeśli produkcja i nie ustawiono BASE -> domyślny prefix (serwer Django analizuje /valuations/api/...)
+const API_PREFIX = IS_DEV ? '' : (NORMALIZED_BASE || '/valuations');
 
 export async function getCompanies(): Promise<CompanyDto[]> {
-  // dev: "/valuations/api/companies/" -> pójdzie przez proxy do Django
-  // prod: "http://.../valuations/api/companies/"
-  const url = IS_DEV ? `/valuations/api/companies/` : `${BASE}/api/companies/`;
+  const url = IS_DEV ? `/valuations/api/companies/` : `${API_PREFIX}/api/companies/`;
   return apiFetch<CompanyListResponse>(url).then(res => res.companies ?? []);
 }
 
 export async function getCompanyStatements(symbol: string): Promise<CompanyStatementsResponse> {
   const encoded = encodeURIComponent(symbol);
-  const url = IS_DEV ? `/valuations/api/company/${encoded}/statements/` : `${BASE}/api/company/${encoded}/statements/`;
+  const url = IS_DEV ? `/valuations/api/company/${encoded}/statements/` : `${API_PREFIX}/api/company/${encoded}/statements/`;
   return apiFetch<CompanyStatementsResponse>(url);
 }
+

@@ -175,13 +175,30 @@ export default function App() {
         <button style={{ marginLeft: 8 }} onClick={applyHistDefaults}>Ustaw domyślne z historii</button>
         {dcfResult ? (
           <div style={{ marginTop: 8 }}>
-            <strong>Equity value:</strong> {Number(dcfResult.equityValue).toLocaleString("pl-PL")}
-            <br />
-            <strong>Equity / share:</strong> {dcfResult.equityPerShare ? Number(dcfResult.equityPerShare).toLocaleString("pl-PL", { maximumFractionDigits: 2 }) : "brak danych (shares)"}
-            <br />
-            <strong>PV cashflows:</strong> {Number(dcfResult.pvCashflows).toLocaleString("pl-PL")}
-            <br />
-            <strong>Terminal (PV):</strong> {Number(dcfResult.pvTerminal).toLocaleString("pl-PL")}
+            <div><strong>Enterprise value (EV):</strong> {Number(dcfResult.enterpriseValue).toLocaleString("pl-PL",{ maximumFractionDigits: 0 })}</div>
+            <div><strong>Terminalna wartość długu netto:</strong> {Number(dcfResult.terminalNetDebt).toLocaleString("pl-PL",{ maximumFractionDigits: 0 })}</div>
+            <div><strong>Wycena kapitału własnego</strong> {Number(dcfResult.equityValue).toLocaleString("pl-PL",{ maximumFractionDigits: 0 })}</div>
+
+            <div style={{ marginTop: 6 }}>
+              <strong>Cena za akcję:</strong>{" "}
+              {dcfResult.equityPerShare !== null && dcfResult.equityPerShare !== undefined
+                ? Number(dcfResult.equityPerShare).toLocaleString("pl-PL", { maximumFractionDigits: 2 })
+                : (companyInfo?.shares_outstanding ? "0.00" : "brak danych (shares)")
+              }
+              {companyInfo?.shares_outstanding ? (
+                <span style={{ color: "#666", marginLeft: 8 }}>
+                  (shares: {Number(companyInfo.shares_outstanding).toLocaleString("pl-PL")})
+                </span>
+              ) : null}
+            </div>
+
+            <div style={{ marginTop: 6 }}>
+              <strong>PV wolnych przepływów:</strong> {Number(dcfResult.pvCashflows).toLocaleString("pl-PL",{ maximumFractionDigits: 0 })}
+              <br />
+              <strong>Wartość terminalna (niezdyskontowana):</strong> {Number(dcfResult.terminalValue).toLocaleString("pl-PL",{ maximumFractionDigits: 0 })}
+              <br />
+              <strong>Wartość terminalna:</strong> {Number(dcfResult.pvTerminal).toLocaleString("pl-PL",{ maximumFractionDigits: 0 })}
+            </div>
           </div>
         ) : null}
       </div>

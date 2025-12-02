@@ -122,7 +122,7 @@ export default function FinancialTable({
       bodyRows.push(
         <tr key={`hdr-${cat}`}>
           <td colSpan={visibleYears.length + 1} style={sectionHeaderStyle}>
-            {cat === "IS" ? "Income Statement" : cat === "BS" ? "Balance Sheet" : cat === "CF" ? "Cash Flow" : "Other"}
+            {cat === "IS" ? "Rachunek zysków i strat" : cat === "BS" ? "Bilans" : cat === "CF" ? "Przepływy pieniężne" : "Other"}
           </td>
         </tr>
       );
@@ -162,21 +162,28 @@ export default function FinancialTable({
                       style={{ width: 140 }}
                     />
                     <input
+                      key={currentDays}
                       type="number"
                       min={DAYS_MIN}
                       max={DAYS_MAX}
-                      value={currentDays}
-                      onChange={(e) => setDays(daysKey as any, Number(e.target.value))}
+                      defaultValue={currentDays}
+                      onBlur={(e) => {
+                        const raw = e.currentTarget.value;
+                        const parsed = raw === "" ? DAYS_MIN : Number(raw);
+                        const clamped = Math.max(DAYS_MIN, Math.min(DAYS_MAX, Math.round(parsed)));
+                        setDays(daysKey as any, clamped);
+                        e.currentTarget.value = String(clamped);
+                      }}
                       style={{ width: 80 }}
                     />
+
                     <div style={{ fontSize: 12, color: "#666" }}>
                       {r.id === "receivables" ? "DSO" : r.id === "inventory" ? "DIO" : "DPO"}
                     </div>
                   </div>
                 );
               }
-
-              // default: percent control (existing behavior)
+              // wewnątrz renderowania kontrolki (zamiast istniejącego bloku):
               const uiVal = internalToUI(forecastParams?.[paramKey] as number | undefined, 0);
               const min = ctrl.min ?? 0;
               const max = ctrl.max ?? 100;
@@ -185,6 +192,7 @@ export default function FinancialTable({
               return (
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: 8, flexDirection: "column" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {/* suwak — zostaje kontrolowany i działa natychmiast */}
                     <input
                       type="range"
                       min={min}
@@ -196,15 +204,32 @@ export default function FinancialTable({
                       }}
                       style={{ width: 120 }}
                     />
+
+                    {/* liczba — ZMIANA: używamy defaultValue + onBlur; dodajemy key żeby się zresetowało gdy uiVal się zmieni */}
                     <input
+                      key={uiVal}                // powoduje remount gdy uiVal się zmieni -> synchronizacja
                       type="number"
                       min={min}
                       max={max}
-                      value={uiVal}
-                      onChange={(e) => {
-                        const v = Number(e.target.value);
-                        const clamped = Math.min(Math.max(Math.round(v), min), max);
+                      defaultValue={uiVal}       // niekontrolowane pole pozwalające na usunięcie zawartości
+                      onBlur={(e) => {
+                        const raw = e.currentTarget.value;
+                        if (raw === "") {
+                          // interpretujemy puste jako min lub możesz wybrać inny fallback
+                          updateParams({ [paramKey]: uiToInternalPct(min) } as Partial<ForecastParams>);
+                          // ustawiamy wartość pola poprzez assignment (bez setState, bo pole jest niekontrolowane)
+                          e.currentTarget.value = String(min);
+                          return;
+                        }
+                        const parsed = Number(raw);
+                        if (Number.isNaN(parsed)) {
+                          // przy nie-numerycznym wejściu cofnij do uiVal
+                          e.currentTarget.value = String(uiVal);
+                          return;
+                        }
+                        const clamped = Math.min(Math.max(Math.round(parsed), min), max);
                         updateParams({ [paramKey]: uiToInternalPct(clamped) } as Partial<ForecastParams>);
+                        e.currentTarget.value = String(clamped);
                       }}
                       style={{ width: 60 }}
                     />
@@ -213,6 +238,7 @@ export default function FinancialTable({
                   <div style={{ fontSize: 11, color: "#666", marginTop: 4 }}>{help}</div>
                 </div>
               );
+
             })() : null}
 
           </div>
