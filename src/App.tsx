@@ -11,6 +11,9 @@ import { getCompanies } from "./api/valuations";
 import type { CompanyDto } from "./api/valuations";
 import { buildScenarioFromStatements } from "./utils/scenarioBuilder";
 import { computeHistoricalAverages } from "./utils/historicalDefaults";
+import DCFResultsTable from "./components/DCFResultsTable";
+import type { DCFResults, DCFYearRow } from "./components/DCFResultsTable";
+
 
 export default function App() {
   const [symbol, setSymbol] = useState<string | null>("TPE");
@@ -83,6 +86,15 @@ export default function App() {
     })();
     return () => { mounted = false; };
   }, [symbol]);
+
+  const handleCompanyChange = (s: string | null) => {
+  // jeśli wybrano inną spółkę, zamknij tabelę wyników DCF
+    if (s !== symbol) {
+      setDcfResult(null);
+    }
+    setSymbol(s);
+  };
+
 
   const calcAndSetDcf = async () => {
     if (!symbol) return;
@@ -163,7 +175,7 @@ export default function App() {
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: 16 }}>
       <h1>Husaria Research — DCF PRO</h1>
 
-      <CompanySelect value={symbol} onChange={setSymbol} />
+      <CompanySelect value={symbol} onChange={handleCompanyChange} />
 
       <div style={{ display: 'flex', gap: 12 }}>
         <GlobalControls params={globalParams} setParams={setGlobalParams} />
@@ -171,36 +183,45 @@ export default function App() {
        </div>
 
       <div style={{ marginTop: 12 }}>
-        <button onClick={calcAndSetDcf}>Calculate DCF</button>
+        <button onClick={calcAndSetDcf}>Oblicz</button>
         <button style={{ marginLeft: 8 }} onClick={applyHistDefaults}>Ustaw domyślne z historii</button>
-        {dcfResult ? (
-          <div style={{ marginTop: 8 }}>
-            <div><strong>Enterprise value (EV):</strong> {Number(dcfResult.enterpriseValue).toLocaleString("pl-PL",{ maximumFractionDigits: 0 })}</div>
-            <div><strong>Terminalna wartość długu netto:</strong> {Number(dcfResult.terminalNetDebt).toLocaleString("pl-PL",{ maximumFractionDigits: 0 })}</div>
-            <div><strong>Wycena kapitału własnego</strong> {Number(dcfResult.equityValue).toLocaleString("pl-PL",{ maximumFractionDigits: 0 })}</div>
+{dcfResult ? (
+  (() => {
+    // mapujemy wynik DCF -> DCFResults (tylko tabela, bez dodatkowego summary)
+    const cashflows = Array.isArray(dcfResult.cashflows) ? dcfResult.cashflows : [];
+    const yearRows = cashflows.map((c: any) => ({
+      year: String(c.year ?? c.y ?? ""),
+      unleveredFCF: typeof c.fcff === "number" ? c.fcff : (typeof c.fcff === "number" ? c.fcff : null),
+      discountFactor: typeof c.discount === "number" ? c.discount : (typeof c.df === "number" ? c.df : null),
+      pvOfFCF: typeof c.pv === "number" ? c.pv : null,
+    }));
 
-            <div style={{ marginTop: 6 }}>
-              <strong>Cena za akcję:</strong>{" "}
-              {dcfResult.equityPerShare !== null && dcfResult.equityPerShare !== undefined
-                ? Number(dcfResult.equityPerShare).toLocaleString("pl-PL", { maximumFractionDigits: 2 })
-                : (companyInfo?.shares_outstanding ? "0.00" : "brak danych (shares)")
-              }
-              {companyInfo?.shares_outstanding ? (
-                <span style={{ color: "#666", marginLeft: 8 }}>
-                  (shares: {Number(companyInfo.shares_outstanding).toLocaleString("pl-PL")})
-                </span>
-              ) : null}
-            </div>
+    const dcfForTable: DCFResults = {
+      years: yearRows.map((r: DCFYearRow) => r.year),
+      yearRows,
+      terminalValue: dcfResult.terminalValue ?? dcfResult.terminal_value ?? null,
+      terminalValueDiscounted: dcfResult.pvTerminal ?? dcfResult.pv_terminal ?? null,
+      sumPVofFCF: dcfResult.pvCashflows ?? dcfResult.pv_cashflows ?? null,
+      enterpriseValue: dcfResult.enterpriseValue ?? dcfResult.enterprise_value ?? null,
+      netDebt: dcfResult.terminalNetDebt ?? dcfResult.terminal_net_debt ?? null,
+      equityValue: dcfResult.equityValue ?? dcfResult.equity_value ?? dcfResult.rawEquity ?? null,
+      sharesOutstanding: companyInfo?.shares_outstanding ?? null,
+      impliedPricePerShare: dcfResult.equityPerShare ?? null,
+      assumptions: {
+        wacc: dcfParams?.wacc ?? null,
+        perpetualGrowth: (dcfParams as any)?.perpetualGrowth ?? (dcfParams as any)?.g ?? null,
+        taxRate: (dcfParams as any)?.taxRate ?? null,
+      },
+    };
 
-            <div style={{ marginTop: 6 }}>
-              <strong>PV wolnych przepływów:</strong> {Number(dcfResult.pvCashflows).toLocaleString("pl-PL",{ maximumFractionDigits: 0 })}
-              <br />
-              <strong>Wartość terminalna (niezdyskontowana):</strong> {Number(dcfResult.terminalValue).toLocaleString("pl-PL",{ maximumFractionDigits: 0 })}
-              <br />
-              <strong>Wartość terminalna:</strong> {Number(dcfResult.pvTerminal).toLocaleString("pl-PL",{ maximumFractionDigits: 0 })}
-            </div>
-          </div>
-        ) : null}
+    return (
+      <div style={{ marginTop: 12 }}>
+        <DCFResultsTable dcf={dcfForTable} onClose={() => setDcfResult(null)} />
+      </div>
+    );
+  })()
+) : null}
+
       </div>
 
       <div style={{ marginTop: 20 }}>

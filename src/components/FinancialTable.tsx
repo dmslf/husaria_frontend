@@ -257,7 +257,7 @@ export default function FinancialTable({
 
   return (
     <div style={{ padding: 12 }}>
-      <h3>{symbol} — Financials (history + forecast)</h3>
+      <h3>{symbol} — Dane finansowe (historyczne + prognoza)</h3>
       <table style={{ borderCollapse: "collapse", width: "100%" }} border={1}>
         <thead>
           <tr>

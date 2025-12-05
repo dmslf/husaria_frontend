@@ -22,7 +22,7 @@ export default function GlobalControls({
 
   return (
     <div style={{ border: "1px solid #eee", padding: 8, marginBottom: 8 }}>
-      <h4>Global controls</h4>
+      <h4>Zmienne globalne</h4>
 
       <div style={{ marginBottom: 8 }}>
         <label style={{ display: "block" }}>Wzrost przychodów (roczny, %)</label>

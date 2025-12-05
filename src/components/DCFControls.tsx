@@ -25,7 +25,7 @@ export default function DCFControls({
 
   return (
     <div style={{ marginBottom: 12, padding: 8, border: "1px solid #eee" }}>
-      <h4>DCF controls</h4>
+      <h4>Parametry DCF</h4>
 
       {/* --- WACC --- */}
       <label>
